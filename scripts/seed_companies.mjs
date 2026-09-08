@@ -1,18 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDKAUQjZhVE2lVFXtVoBtTe3rKiBv0CsGk",
-  authDomain: "jobs-vn.firebaseapp.com",
-  projectId: "jobs-vn",
-  storageBucket: "jobs-vn.firebasestorage.app",
-  messagingSenderId: "166501053122",
-  appId: "1:166501053122:web:77c896b7f29f065098015b",
-  measurementId: "G-VFZBQSD8ZG"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "./firebase.mjs";
 
 const initialCompanies = [
   { name: "FPT Software", cover: "https://picsum.photos/seed/FPTSoftware/400/200", logo: "https://www.google.com/s2/favicons?domain=fptsoftware.com&sz=256", industry: "Công nghệ thông tin", rating: 4.3, reviews: 1240, tags: ["Software", "Outsourcing"], employees: "35.000+ nhân viên", jobs: "124 vị trí đang tuyển", loc: "Hà Nội", year: 1999 },

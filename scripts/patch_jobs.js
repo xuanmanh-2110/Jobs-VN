@@ -1,17 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDKAUQjZhVE2lVFXtVoBtTe3rKiBv0CsGk",
-  authDomain: "jobs-vn.firebaseapp.com",
-  projectId: "jobs-vn",
-  storageBucket: "jobs-vn.firebasestorage.app",
-  messagingSenderId: "166501053122",
-  appId: "1:166501053122:web:77c896b7f29f065098015b",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { db } from "./firebase.mjs";
 
 async function patchJobs() {
   console.log("Fetching all jobs from Firestore...");
