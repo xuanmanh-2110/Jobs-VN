@@ -33,6 +33,8 @@ import { sendNotification } from '../services/notificationService';
 import PDFViewer from '../components/PDFViewer';
 import OnlineCVViewer from '../components/OnlineCVViewer';
 import AvatarCropper from '../components/AvatarCropper';
+import MonthPicker from '../components/MonthPicker';
+import UniversityAutocomplete from '../components/UniversityAutocomplete';
 import {
   User,
   Briefcase,
@@ -347,15 +349,24 @@ const ProfilePage = () => {
   const handleTouchStart = (e, index, category) => {
     if (isViewOnly) return;
     const touch = e.touches[0];
+    const list = category === 'skill' ? skills : category === 'tool' ? tools : softSkills;
+    const currentItem = list[index];
     const item = {
       index,
       category,
       targetIndex: index,
       startX: touch.clientX,
       startY: touch.clientY,
+      currentX: touch.clientX,
+      currentY: touch.clientY,
+      name: currentItem?.name || '',
+      level: currentItem?.level || ''
     };
     touchDragRef.current = item;
     setTouchDrag(item);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(30); } catch (_) {}
+    }
   };
 
   useEffect(() => {
@@ -365,22 +376,31 @@ const ProfilePage = () => {
       if (!touchDragRef.current) return;
       if (e.cancelable) e.preventDefault();
       const touch = e.touches[0];
+
+      touchDragRef.current.currentX = touch.clientX;
+      touchDragRef.current.currentY = touch.clientY;
+
       const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      const skillCard = el?.closest('[data-skill-index]');
+      const skillCard = el?.closest('[data-skill-index]') || el?.closest('[data-skill-idx]');
       if (skillCard) {
-        const targetIdx = parseInt(skillCard.getAttribute('data-skill-index'), 10);
-        const targetCategory = skillCard.getAttribute('data-skill-category');
+        const targetIdx = parseInt(skillCard.getAttribute('data-skill-index') || skillCard.getAttribute('data-skill-idx'), 10);
+        const targetCategory = skillCard.getAttribute('data-skill-category') || skillCard.getAttribute('data-skill-cat');
         if (!isNaN(targetIdx) && targetCategory === touchDragRef.current.category) {
-          touchDragRef.current.targetIndex = targetIdx;
-          setTouchDrag(prev => prev ? ({ ...prev, targetIndex: targetIdx }) : null);
+          if (touchDragRef.current.targetIndex !== targetIdx) {
+            touchDragRef.current.targetIndex = targetIdx;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(15); } catch (_) {}
+            }
+          }
         }
       }
+      setTouchDrag(prev => prev ? ({ ...prev, currentX: touch.clientX, currentY: touch.clientY, targetIndex: touchDragRef.current.targetIndex }) : null);
     };
 
     const onGlobalTouchEnd = () => {
       if (touchDragRef.current) {
         const { index, targetIndex, category } = touchDragRef.current;
-        if (targetIndex !== undefined && targetIndex !== index) {
+        if (targetIndex !== undefined && targetIndex !== null && targetIndex !== index) {
           reorderCategorySkills(category, index, targetIndex);
         }
       }
@@ -1649,15 +1669,6 @@ const ProfilePage = () => {
 
             {activeTab === 'Kỹ năng' && (
               <div className="animate-fade-in space-y-8">
-                {!isViewOnly && (
-                  <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl p-3.5 text-xs text-blue-800 dark:text-blue-200 flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5">
-                      <Info size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
-                      <span><strong>Lưu ý:</strong> Kéo thả các thẻ kỹ năng (hoặc giữ biểu tượng <strong>⋮⋮</strong> trên điện thoại) để đưa kỹ năng mạnh nhất lên đầu, hoặc click vào thẻ để chỉnh sửa.</span>
-                    </span>
-                  </div>
-                )}
-
                 {/* 1. Kỹ năng chuyên môn */}
                 <div>
                   <div className="flex justify-between items-center mb-3.5">
@@ -1674,13 +1685,15 @@ const ProfilePage = () => {
                       return (
                         <div
                           key={i}
+                          data-skill-index={i}
+                          data-skill-category="skill"
                           data-skill-cat="skill"
                           data-skill-idx={i}
                           draggable={!isViewOnly}
                           onDragStart={() => handleDragStart(i, 'skill')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'skill')}
-                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none ${isBeingDragged
+                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
@@ -1691,21 +1704,21 @@ const ProfilePage = () => {
                             <span
                               onTouchStart={(e) => handleTouchStart(e, i, 'skill')}
                               style={{ touchAction: 'none' }}
-                              className="p-1 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0"
+                              className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
                           <span
-                            className={`font-medium ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
+                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'skill' })}
                           >
                             {skill.name}
                           </span>
                           <span
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'skill' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
                             title="Mức độ thành thạo (Click để sửa)"
                           >
                             {skill.level}
@@ -1746,13 +1759,15 @@ const ProfilePage = () => {
                       return (
                         <div
                           key={i}
+                          data-skill-index={i}
+                          data-skill-category="tool"
                           data-skill-cat="tool"
                           data-skill-idx={i}
                           draggable={!isViewOnly}
                           onDragStart={() => handleDragStart(i, 'tool')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'tool')}
-                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none ${isBeingDragged
+                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
@@ -1763,21 +1778,21 @@ const ProfilePage = () => {
                             <span
                               onTouchStart={(e) => handleTouchStart(e, i, 'tool')}
                               style={{ touchAction: 'none' }}
-                              className="p-1 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0"
+                              className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
                           <span
-                            className={`font-medium ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
+                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'tool' })}
                           >
                             {skill.name}
                           </span>
                           <span
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'tool' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
                             title="Mức độ thành thạo (Click để sửa)"
                           >
                             {skill.level}
@@ -1818,13 +1833,15 @@ const ProfilePage = () => {
                       return (
                         <div
                           key={i}
+                          data-skill-index={i}
+                          data-skill-category="softSkill"
                           data-skill-cat="softSkill"
                           data-skill-idx={i}
                           draggable={!isViewOnly}
                           onDragStart={() => handleDragStart(i, 'softSkill')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'softSkill')}
-                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none ${isBeingDragged
+                          className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
@@ -1835,21 +1852,21 @@ const ProfilePage = () => {
                             <span
                               onTouchStart={(e) => handleTouchStart(e, i, 'softSkill')}
                               style={{ touchAction: 'none' }}
-                              className="p-1 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0"
+                              className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
                           <span
-                            className={`font-medium ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
+                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'softSkill' })}
                           >
                             {skill.name}
                           </span>
                           <span
                             onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'softSkill' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
                             title="Mức độ thành thạo (Click để sửa)"
                           >
                             {skill.level}
@@ -1873,6 +1890,29 @@ const ProfilePage = () => {
                     {softSkills.length === 0 && <p className="text-xs text-gray-400 dark:text-slate-500 py-2 px-1">Chưa có kỹ năng mềm / ngoại ngữ nào.</p>}
                   </div>
                 </div>
+
+                {/* Floating Touch Drag Preview on Mobile */}
+                {touchDrag && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      left: `${touchDrag.currentX}px`,
+                      top: `${touchDrag.currentY - 45}px`,
+                      transform: 'translate(-50%, -50%)',
+                      pointerEvents: 'none',
+                      zIndex: 999999
+                    }}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-2xl ring-4 ring-blue-500/30 scale-105 select-none pointer-events-none transition-transform"
+                  >
+                    <GripVertical size={16} className="opacity-80" />
+                    <span className="truncate max-w-[160px]">{touchDrag.name}</span>
+                    {touchDrag.level && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/25 font-bold shrink-0 whitespace-nowrap">
+                        {touchDrag.level}
+                      </span>
+                    )}
+                  </div>
+                )}
 
               </div>
             )}
@@ -2973,11 +3013,10 @@ const ProfilePage = () => {
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Từ tháng/năm <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="month"
-                        className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      <MonthPicker
                         value={formData.startMonth || ''}
-                        onChange={e => setFormData({ ...formData, startMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, startMonth: val })}
+                        placeholder="Chọn tháng bắt đầu"
                         required
                       />
                     </div>
@@ -2985,12 +3024,11 @@ const ProfilePage = () => {
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Đến tháng/năm {formData.isCurrent && <span className="text-blue-600 dark:text-blue-400 font-semibold">(Hiện tại)</span>}
                       </label>
-                      <input
-                        type="month"
+                      <MonthPicker
                         disabled={formData.isCurrent}
-                        className={`w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all ${formData.isCurrent ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-600 cursor-not-allowed' : ''}`}
                         value={formData.endMonth || ''}
-                        onChange={e => setFormData({ ...formData, endMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, endMonth: val })}
+                        placeholder="Chọn tháng kết thúc"
                       />
                     </div>
                   </div>
@@ -3041,13 +3079,11 @@ const ProfilePage = () => {
                     <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                       Trường đào tạo / Cơ sở giáo dục <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <UniversityAutocomplete
                       required
                       placeholder="VD: Đại học Bách Khoa Hà Nội, ĐHQG Hà Nội..."
-                      className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                       value={formData.school || ''}
-                      onChange={e => setFormData({ ...formData, school: e.target.value })}
+                      onChange={val => setFormData({ ...formData, school: val })}
                     />
                   </div>
                   <div>
@@ -3068,11 +3104,10 @@ const ProfilePage = () => {
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Từ tháng/năm <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="month"
-                        className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      <MonthPicker
                         value={formData.startMonth || ''}
-                        onChange={e => setFormData({ ...formData, startMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, startMonth: val })}
+                        placeholder="Chọn tháng bắt đầu"
                         required
                       />
                     </div>
@@ -3080,12 +3115,11 @@ const ProfilePage = () => {
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Đến tháng/năm {formData.isStudying && <span className="text-blue-600 dark:text-blue-400 font-semibold">(Đang theo học)</span>}
                       </label>
-                      <input
-                        type="month"
+                      <MonthPicker
                         disabled={formData.isStudying}
-                        className={`w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all ${formData.isStudying ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-600 cursor-not-allowed' : ''}`}
                         value={formData.endMonth || ''}
-                        onChange={e => setFormData({ ...formData, endMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, endMonth: val })}
+                        placeholder="Chọn tháng tốt nghiệp"
                       />
                     </div>
                   </div>
@@ -3147,22 +3181,20 @@ const ProfilePage = () => {
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Tháng/Năm cấp <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="month"
-                        className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      <MonthPicker
                         value={formData.issueMonth || ''}
-                        onChange={e => setFormData({ ...formData, issueMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, issueMonth: val })}
+                        placeholder="Chọn tháng cấp"
                         required
                       />
                     </div>
                     <div className="flex-1">
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">Tháng/Năm hết hạn</label>
-                      <input
-                        type="month"
+                      <MonthPicker
                         disabled={formData.noExpiry}
-                        className={`w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all ${formData.noExpiry ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-600 cursor-not-allowed' : ''}`}
                         value={formData.expiryMonth || ''}
-                        onChange={e => setFormData({ ...formData, expiryMonth: e.target.value })}
+                        onChange={val => setFormData({ ...formData, expiryMonth: val })}
+                        placeholder="Chọn tháng hết hạn"
                       />
                     </div>
                   </div>

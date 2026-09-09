@@ -13,6 +13,7 @@ import { sendNotification } from '../services/notificationService';
 import PDFViewer from '../components/PDFViewer';
 import OnlineCVViewer from '../components/OnlineCVViewer';
 import AvatarCropper from '../components/AvatarCropper';
+import DatePicker from '../components/DatePicker';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import CompanyAutocomplete, { findMatchingCompanyLogo, generateCompanyLogo } from '../components/CompanyAutocomplete';
 import JSZip from 'jszip';
@@ -2011,12 +2012,11 @@ const HRDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <div>
                     <span className="text-[11px] text-gray-500 dark:text-slate-400 block mb-1">Ngày phỏng vấn:</span>
-                    <input
-                      type="date"
+                    <DatePicker
                       required
                       value={interviewModal.date}
-                      onChange={e => setInterviewModal({ ...interviewModal, date: e.target.value })}
-                      className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-gray-800 dark:text-slate-100 font-medium focus:border-blue-500 outline-none"
+                      onChange={e => setInterviewModal({ ...interviewModal, date: e?.value || e?.target?.value || '' })}
+                      placeholder="Chọn ngày phỏng vấn"
                     />
                   </div>
                   <div>

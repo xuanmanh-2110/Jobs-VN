@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import CompanyAutocomplete, { findMatchingCompanyLogo, generateCompanyLogo } from '../components/CompanyAutocomplete';
 import DropdownSelect from '../components/DropdownSelect';
+import DatePicker from '../components/DatePicker';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { logoutUser } from '../services/authService';
@@ -523,15 +524,16 @@ const PostJob = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Hạn ứng tuyển <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    required
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
-                    onChange={handleChange}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full md:w-64 px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                  />
+                  <div className="w-full md:w-64">
+                    <DatePicker
+                      required
+                      name="deadline"
+                      value={formData.deadline}
+                      onChange={handleChange}
+                      min={new Date().toISOString().split('T')[0]}
+                      placeholder="Chọn ngày hết hạn"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Mô tả công việc <span className="text-red-500">*</span></label>
