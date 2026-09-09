@@ -240,8 +240,17 @@ const JobsPage = ({ initialParams }) => {
   // Shimmer Skeleton Loader Component
   if (loading) {
     return (
-      <div className="bg-gray-50 dark:bg-slate-950 min-h-screen py-6 lg:py-8 px-4 lg:px-8 transition-colors">
-        <div className="max-w-6xl mx-auto">
+      <div className="bg-gray-50 dark:bg-slate-950 min-h-screen pb-12 transition-colors">
+        {/* Breadcrumb Skeleton */}
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 py-3 px-4 md:px-8 mb-6">
+          <div className="max-w-6xl mx-auto flex items-center gap-2">
+            <div className="w-16 h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
+            <span className="text-gray-300 dark:text-slate-600">/</span>
+            <div className="w-32 h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 lg:px-8">
           {/* Skeleton Filter Box */}
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 animate-pulse">
             <div className="flex flex-col lg:flex-row gap-3 mb-4">
@@ -333,8 +342,25 @@ const JobsPage = ({ initialParams }) => {
         </div>
       )}
 
+      {/* Breadcrumb */}
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 py-3 px-4 md:px-8 text-sm text-gray-500 dark:text-slate-400 mb-6">
+        <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
+          <span className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 font-medium" onClick={() => navigate('/')}>Trang chủ</span>
+          <span>/</span>
+          {category !== 'Tất cả ngành nghề' ? (
+            <>
+              <span className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 font-medium" onClick={resetFilters}>Danh sách việc làm</span>
+              <span>/</span>
+              <span className="text-gray-900 dark:text-white font-medium truncate">{category}</span>
+            </>
+          ) : (
+            <span className="text-gray-900 dark:text-white font-medium truncate">Danh sách việc làm</span>
+          )}
+        </div>
+      </div>
+
       {/* Main Container */}
-      <div className="py-6 lg:py-8 px-4 lg:px-8">
+      <div className="pb-12 px-4 lg:px-8">
         <div className="max-w-6xl mx-auto">
           
           {/* Search & Filter Section */}

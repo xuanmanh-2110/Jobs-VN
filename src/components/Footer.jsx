@@ -101,7 +101,21 @@ const Footer = () => {
             <h4 className="font-bold text-white mb-3 sm:mb-4 text-sm sm:text-base uppercase tracking-wider">Ứng viên</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
               <li><Link to="/jobs" className="hover:text-blue-400 hover:underline transition-colors">Tìm việc làm</Link></li>
-              <li><Link to="/profile" className="hover:text-blue-400 hover:underline transition-colors">Tạo hồ sơ</Link></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (userRole === 'hr') {
+                      navigate('/hr-dashboard');
+                    } else {
+                      navigate('/profile');
+                    }
+                  }}
+                  className="hover:text-blue-400 hover:underline transition-colors text-left cursor-pointer"
+                >
+                  Tạo hồ sơ
+                </button>
+              </li>
               <li><Link to="/news" className="hover:text-blue-400 hover:underline transition-colors">Cẩm nang tuyển dụng</Link></li>
             </ul>
           </div>

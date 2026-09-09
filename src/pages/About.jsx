@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Building2,
   Users,
@@ -25,6 +26,8 @@ import {
 
 const About = () => {
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+  const isHR = userRole === 'hr';
 
   const stats = [
     { number: '10,000+', label: 'Việc làm chất lượng cao', desc: 'Cập nhật liên tục mỗi ngày từ các công ty uy tín' },
@@ -356,10 +359,10 @@ const About = () => {
           <div className="pt-2 flex flex-wrap justify-center gap-3">
             <button
               type="button"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate(isHR ? '/hr-dashboard' : '/profile')}
               className="px-6 py-3 bg-white dark:bg-slate-100 text-blue-700 dark:text-blue-900 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-md cursor-pointer active:scale-95 text-sm sm:text-base"
             >
-              Tạo hồ sơ xin việc ngay
+              {isHR ? 'Vào Kênh Nhà tuyển dụng' : 'Tạo hồ sơ xin việc ngay'}
             </button>
             <button
               type="button"

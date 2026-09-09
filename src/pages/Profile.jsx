@@ -158,6 +158,12 @@ const ProfilePage = () => {
     }
   }, [navigate, isViewOnly, currentUser, cachedUid]);
 
+  useEffect(() => {
+    if (userRole === 'hr' && !isViewOnly) {
+      navigate('/hr-dashboard', { replace: true });
+    }
+  }, [userRole, isViewOnly, navigate]);
+
   const tabs = isViewOnly
     ? ['Thông tin cá nhân', 'Kinh nghiệm', 'Học vấn', 'Chứng chỉ', 'Kỹ năng']
     : ['Thông tin cá nhân', 'Kinh nghiệm', 'Học vấn', 'Chứng chỉ', 'Kỹ năng', 'Việc đã lưu', 'Đơn ứng tuyển'];
@@ -436,6 +442,11 @@ const ProfilePage = () => {
       return;
     }
 
+    if (userRole === 'hr') {
+      setLoading(false);
+      return;
+    }
+
     const uid = currentUser?.uid || cachedUid;
     if (!uid) return;
 
@@ -512,7 +523,7 @@ const ProfilePage = () => {
       unsubSavedJobs();
       unsubApps();
     };
-  }, [currentUser, isViewOnly, applicantInfo, cachedUid, cachedEmail]);
+  }, [currentUser, isViewOnly, applicantInfo, cachedUid, cachedEmail, userRole]);
 
   const getLevelBadgeClass = (level) => {
     switch (level) {
@@ -1135,6 +1146,29 @@ const ProfilePage = () => {
     }
     closeModal();
   };
+
+  if (userRole === 'hr' && !isViewOnly) {
+    return (
+      <div className="bg-gray-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4">
+        <div className="text-center p-6 sm:p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 max-w-md w-full animate-fade-in">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 dark:border-blue-900">
+            <Building2 className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Tài khoản Nhà tuyển dụng</h3>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mb-6 leading-relaxed">
+            Bạn đang đăng nhập bằng tài khoản <strong>Nhà tuyển dụng</strong>. Trang tạo hồ sơ CV này dành cho ứng viên tìm việc. Đang chuyển hướng bạn sang <strong>Kênh Quản lý tuyển dụng</strong>...
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/hr-dashboard', { replace: true })}
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer active:scale-95"
+          >
+            Đến Kênh Quản lý tuyển dụng ngay
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-slate-950 min-h-screen pb-10 text-gray-900 dark:text-slate-100 transition-colors">

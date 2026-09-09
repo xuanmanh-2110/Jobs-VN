@@ -40,6 +40,8 @@ import {
   Compass,
   ArrowUpRight,
   SlidersHorizontal,
+  LayoutDashboard,
+  PlusCircle,
   X
 } from 'lucide-react';
 
@@ -501,7 +503,64 @@ const Jobs = ({ navigateTo }) => {
   );
 };
 
-const CVBanner = ({ navigateTo }) => {
+const CVBanner = ({ navigateTo, isHR }) => {
+  if (isHR) {
+    return (
+      <section className="py-10 sm:py-14 px-4 sm:px-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="space-y-4 max-w-2xl text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-xs font-semibold">
+              <Briefcase size={14} className="text-yellow-400" />
+              <span>Kênh Dành Cho Nhà Tuyển Dụng</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+              Quản Lý Tuyển Dụng Hiệu Quả – Kết Nối <span className="text-cyan-300">500,000+ Ứng Viên Tiềm Năng</span>
+            </h2>
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
+              Hệ thống phân loại hồ sơ trực quan, tự động xếp lịch phỏng vấn và quản lý tin tuyển dụng chuyên nghiệp giúp doanh nghiệp tiếp cận nhân tài nhanh chóng và tối ưu chi phí.
+            </p>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => navigateTo('hr-dashboard')}
+                className="px-6 sm:px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 cursor-pointer active:scale-95 text-sm sm:text-base flex items-center gap-2"
+              >
+                <LayoutDashboard size={18} />
+                <span>Kênh Quản lý Tuyển dụng</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('post-job')}
+                className="px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all cursor-pointer active:scale-95 text-sm sm:text-base flex items-center gap-2"
+              >
+                <PlusCircle size={18} />
+                <span>Đăng tin tuyển dụng mới</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Feature Highlights Grid on right */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full lg:w-auto shrink-0">
+            {[
+              { title: "500,000+ hồ sơ ứng viên", desc: "Tiếp cận nhân tài đa lĩnh vực" },
+              { title: "Sàng lọc CV thông minh", desc: "Đánh giá nhanh kỹ năng phù hợp" },
+              { title: "Xếp lịch phỏng vấn", desc: "Tự động gửi email thông báo ứng viên" },
+              { title: "Đăng tin không giới hạn", desc: "Tối ưu chi phí và hiệu quả tuyển dụng" },
+            ].map((item, idx) => (
+              <div key={idx} className="p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xs flex items-start gap-3">
+                <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-white">{item.title}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-10 sm:py-14 px-4 sm:px-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
@@ -679,15 +738,18 @@ const News = ({ navigateTo, allNews }) => (
   </section>
 );
 
-const EmployerCTABanner = ({ navigateTo }) => (
+const EmployerCTABanner = ({ navigateTo, isHR }) => (
   <section className="py-12 sm:py-16 px-4 sm:px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white">
     <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
       <div className="space-y-2 max-w-xl">
         <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-          Quý Doanh Nghiệp Đang Cần Chiêu Mộ Nhân Tài?
+          {isHR ? 'Đẩy Nhanh Hiệu Quả Tuyển Dụng Cùng Jobs VN' : 'Quý Doanh Nghiệp Đang Cần Chiêu Mộ Nhân Tài?'}
         </h3>
         <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-          Đăng tin tuyển dụng hoàn toàn miễn phí, tiếp cận hơn <strong>500,000+ ứng viên chất lượng cao</strong> và tự động xếp lịch phỏng vấn nhanh chóng.
+          {isHR
+            ? 'Đăng thêm tin tuyển dụng mới để tiếp cận thêm nhiều ứng viên tiềm năng, hoặc truy cập Kênh Nhà tuyển dụng để quản lý tiến độ phỏng vấn.'
+            : 'Đăng tin tuyển dụng hoàn toàn miễn phí, tiếp cận hơn 500,000+ ứng viên chất lượng cao và tự động xếp lịch phỏng vấn nhanh chóng.'
+          }
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 shrink-0">
@@ -714,6 +776,8 @@ const HomePage = ({ navigateTo }) => {
   const { jobs: allJobs } = useJobs();
   const { companies: allCompanies } = useCompanies();
   const { news: allNews } = useNews();
+  const { userRole } = useAuth();
+  const isHR = userRole === 'hr';
   
   return (
     <div className="bg-white dark:bg-slate-950 transition-colors duration-200">
@@ -721,10 +785,10 @@ const HomePage = ({ navigateTo }) => {
       <Stats />
       <Categories navigateTo={navigateTo} />
       <Jobs navigateTo={navigateTo} />
-      <CVBanner navigateTo={navigateTo} />
+      <CVBanner navigateTo={navigateTo} isHR={isHR} />
       <Employers navigateTo={navigateTo} allJobs={allJobs} allCompanies={allCompanies} />
       <News navigateTo={navigateTo} allNews={allNews} />
-      <EmployerCTABanner navigateTo={navigateTo} />
+      <EmployerCTABanner navigateTo={navigateTo} isHR={isHR} />
     </div>
   );
 };
