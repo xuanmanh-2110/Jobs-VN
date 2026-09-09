@@ -381,14 +381,19 @@ const JobsPage = ({ initialParams }) => {
                   </button>
                 )}
               </div>
-              <div className="w-full lg:w-64 flex items-center px-4 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-lg">
-                  <MapPin className="w-5 h-5 text-gray-400 dark:text-slate-500 mr-2 shrink-0" strokeWidth={1.75} />
+              <div className="w-full lg:w-64 flex items-center px-3.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-lg h-12 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
                   <DropdownSelect 
                     className="w-full h-full text-sm font-medium"
                     options={VIETNAM_PROVINCES}
                     value={location}
                     onChange={setLocation}
                     placeholder="Tất cả địa điểm"
+                    icon={
+                      <svg className="w-5 h-5 text-gray-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    }
                   />
               </div>
 

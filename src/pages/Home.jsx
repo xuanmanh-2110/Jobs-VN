@@ -128,14 +128,19 @@ const Hero = ({ navigateTo }) => {
             </div>
 
             {/* Location Select */}
-            <div className="w-full md:w-60 flex items-center px-3 bg-gray-50/80 hover:bg-gray-50 border border-gray-200/80 rounded-xl h-12 sm:h-14 transition-all focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white">
-              <MapPin className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
+            <div className="w-full md:w-60 flex items-center px-3.5 bg-gray-50/80 hover:bg-gray-50 border border-gray-200/80 rounded-xl h-12 sm:h-14 transition-all focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white">
               <DropdownSelect 
                 className="w-full h-full font-medium text-sm sm:text-base text-gray-800"
                 options={VIETNAM_PROVINCES}
                 value={location}
                 onChange={setLocation}
                 placeholder="Tất cả địa điểm"
+                icon={
+                  <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                }
               />
             </div>
 

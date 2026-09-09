@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
-const DropdownSelect = ({ options = [], value, onChange, placeholder, className = '', allValue = 'Tất cả' }) => {
+const DropdownSelect = ({ options = [], value, onChange, placeholder, className = '', allValue = 'Tất cả', icon = null }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const triggerRef = useRef(null);
@@ -84,13 +84,16 @@ const DropdownSelect = ({ options = [], value, onChange, placeholder, className 
   const selectedLabel = value === allValue ? placeholder : (value || placeholder);
 
   return (
-    <div className={`relative ${className}`} ref={triggerRef}>
+    <div className={`relative flex items-center ${className}`} ref={triggerRef}>
       <button
         type="button"
-        className="w-full py-2.5 sm:py-3 flex items-center justify-between outline-none text-gray-700 dark:text-slate-200 bg-transparent text-left gap-2"
+        className="w-full h-full min-h-[40px] flex items-center justify-between outline-none text-gray-700 dark:text-slate-200 bg-transparent text-left gap-2 cursor-pointer select-none"
         onClick={handleToggle}
       >
-        <span className="truncate text-sm font-medium">{selectedLabel}</span>
+        <div className="flex items-center gap-2 min-w-0 flex-1 my-auto">
+          {icon && <span className="inline-flex items-center justify-center shrink-0">{icon}</span>}
+          <span className="truncate text-sm font-medium">{selectedLabel}</span>
+        </div>
         <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
