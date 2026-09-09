@@ -188,11 +188,7 @@ const PostJob = () => {
 
   const handleModalClose = () => {
     setShowSuccessModal(false);
-    if (jobToEdit) {
-      navigate('/hr-dashboard');
-    } else {
-      navigate('/jobs');
-    }
+    navigate('/hr-dashboard');
   };
 
   if (!isHR) {
@@ -559,7 +555,7 @@ const PostJob = () => {
 
             {/* Action Buttons */}
             <div className="pt-6 border-t border-gray-200 dark:border-slate-800 flex flex-col sm:flex-row justify-end gap-4">
-              <button type="button" onClick={() => jobToEdit ? navigate('/hr-dashboard') : navigate('/')} className="px-6 py-3 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+              <button type="button" onClick={() => navigate('/hr-dashboard')} className="px-6 py-3 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                 Hủy bỏ
               </button>
               <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98">
