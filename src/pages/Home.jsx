@@ -76,7 +76,7 @@ const Hero = ({ navigateTo }) => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-blue-900 text-white py-14 sm:py-20 lg:py-24 px-4 sm:px-8">
+    <section className="relative overflow-hidden bg-linear-to-br from-blue-700 via-indigo-700 to-blue-900 text-white py-14 sm:py-20 lg:py-24 px-4 sm:px-8">
       {/* Background Decorative Glows */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none" />
@@ -92,7 +92,7 @@ const Hero = ({ navigateTo }) => {
         {/* Main Heading */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight max-w-4xl mx-auto text-balance">
           Tìm Việc Làm Nhanh 24h & <br className="hidden sm:block" />
-          <span className="bg-gradient-to-r from-blue-200 via-cyan-200 to-yellow-200 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-blue-200 via-cyan-200 to-yellow-200 bg-clip-text text-transparent">
             Khởi Đầu Sự Nghiệp Đột Phá
           </span>
         </h1>
@@ -147,8 +147,8 @@ const Hero = ({ navigateTo }) => {
 
             {/* Search Submit Button */}
             <button 
-              type="button"
-              className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold h-12 sm:h-14 px-8 rounded-xl transition-all whitespace-nowrap cursor-pointer text-sm sm:text-base shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2"
+              type="button" 
+              className="w-full md:w-auto bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold h-12 sm:h-14 px-8 rounded-xl transition-all whitespace-nowrap cursor-pointer text-sm sm:text-base shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2"
               onClick={handleSearch}
             >
               <Search size={18} />
@@ -462,9 +462,9 @@ const Jobs = ({ navigateTo }) => {
                         </span>
                         <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400">
                           <MapPin size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
-                          <span className="truncate max-w-[140px]">{job.loc}</span>
+                          <span className="truncate max-w-35">{job.loc}</span>
                         </span>
-                        <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400 hidden sm:flex">
+                        <span className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-slate-400">
                           <Briefcase size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
                           <span>{job.type}</span>
                         </span>
@@ -523,7 +523,7 @@ const Jobs = ({ navigateTo }) => {
 const CVBanner = ({ navigateTo, isHR }) => {
   if (isHR) {
     return (
-      <section className="py-10 sm:py-14 px-4 sm:px-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
+      <section className="py-10 sm:py-14 px-4 sm:px-8 bg-linear-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
           <div className="space-y-4 max-w-2xl text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-xs font-semibold">
@@ -579,7 +579,7 @@ const CVBanner = ({ navigateTo, isHR }) => {
   }
 
   return (
-    <section className="py-10 sm:py-14 px-4 sm:px-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
+    <section className="py-10 sm:py-14 px-4 sm:px-8 bg-linear-to-r from-slate-900 via-indigo-950 to-blue-950 text-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
         <div className="space-y-4 max-w-2xl text-center lg:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-xs font-semibold">
@@ -756,7 +756,7 @@ const News = ({ navigateTo, allNews }) => (
 );
 
 const EmployerCTABanner = ({ navigateTo, isHR }) => (
-  <section className="py-12 sm:py-16 px-4 sm:px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white">
+  <section className="py-12 sm:py-16 px-4 sm:px-8 bg-linear-to-r from-blue-600 via-indigo-600 to-blue-700 text-white">
     <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
       <div className="space-y-2 max-w-xl">
         <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
