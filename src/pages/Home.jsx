@@ -42,7 +42,8 @@ import {
   SlidersHorizontal,
   LayoutDashboard,
   PlusCircle,
-  X
+  X,
+  Laptop
 } from 'lucide-react';
 
 const POPULAR_KEYWORDS = [
@@ -371,23 +372,34 @@ const Jobs = ({ navigateTo }) => {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
             {[
               { id: 'all', label: 'Tất cả' },
-              { id: 'hot', label: 'Việc HOT 🔥' },
-              { id: 'highSalary', label: 'Lương cao 💰' },
-              { id: 'it', label: 'IT & Công nghệ 💻' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+              { id: 'hot', label: 'Việc HOT', icon: Flame, iconColor: 'text-orange-500 dark:text-orange-400' },
+              { id: 'highSalary', label: 'Lương cao', icon: Banknote, iconColor: 'text-emerald-600 dark:text-emerald-400' },
+              { id: 'it', label: 'IT & Công nghệ', icon: Laptop, iconColor: 'text-blue-600 dark:text-blue-400' }
+            ].map(tab => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+                  }`}
+                >
+                  {IconComp && (
+                    <IconComp
+                      size={14}
+                      className={isActive ? 'text-white' : tab.iconColor}
+                      strokeWidth={2}
+                    />
+                  )}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
