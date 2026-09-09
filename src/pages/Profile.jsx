@@ -912,7 +912,9 @@ const ProfilePage = () => {
   const paginatedApps = filteredApps.slice((appPage - 1) * appItemsPerPage, appPage * appItemsPerPage);
 
   const openModal = (type, data = null) => {
-    setModal({ isOpen: true, type, data });
+    const isEdit = Boolean(data);
+    const modalData = data ? { ...data, isEdit } : null;
+    setModal({ isOpen: true, type, data: modalData });
     let initData = data ? { ...data } : {};
     if (data && data.time) {
       const parts = data.time.split(/[-–]/).map(p => p.trim());
@@ -1041,31 +1043,49 @@ const ProfilePage = () => {
         };
         const cat = formData.category || 'skill';
 
-        let nextSkills = skills;
-        let nextTools = tools;
-        let nextSoftSkills = softSkills;
+        let nextSkills = [...skills];
+        let nextTools = [...tools];
+        let nextSoftSkills = [...softSkills];
 
-        if (modal.data && modal.data.isEdit) {
-          const oldCat = modal.data.category;
-          const oldIdx = modal.data.index;
+        const isEditing = Boolean(
+          formData.isEdit ||
+          modal.data?.isEdit ||
+          (modal.data && modal.data.index !== undefined)
+        );
+
+        if (isEditing) {
+          const oldCat = modal.data?.category || formData.category || 'skill';
+          const oldIdx = modal.data?.index !== undefined ? modal.data.index : formData.index;
+
           if (oldCat === cat) {
-            if (cat === 'skill') nextSkills = skills.map((s, i) => i === oldIdx ? itemData : s);
-            else if (cat === 'tool') nextTools = tools.map((t, i) => i === oldIdx ? itemData : t);
-            else if (cat === 'softSkill') nextSoftSkills = softSkills.map((sk, i) => i === oldIdx ? itemData : sk);
+            if (cat === 'skill') nextSkills = nextSkills.map((s, i) => i === oldIdx ? itemData : s);
+            else if (cat === 'tool') nextTools = nextTools.map((t, i) => i === oldIdx ? itemData : t);
+            else if (cat === 'softSkill') nextSoftSkills = nextSoftSkills.map((sk, i) => i === oldIdx ? itemData : sk);
           } else {
-            // Remove from old
-            if (oldCat === 'skill') nextSkills = skills.filter((_, i) => i !== oldIdx);
-            else if (oldCat === 'tool') nextTools = tools.filter((_, i) => i !== oldIdx);
-            else if (oldCat === 'softSkill') nextSoftSkills = softSkills.filter((_, i) => i !== oldIdx);
-            // Add to new
-            if (cat === 'skill') nextSkills = [...nextSkills, itemData];
-            else if (cat === 'tool') nextTools = [...nextTools, itemData];
-            else if (cat === 'softSkill') nextSoftSkills = [...nextSoftSkills, itemData];
+            // Remove from old category
+            if (oldCat === 'skill') nextSkills = nextSkills.filter((_, i) => i !== oldIdx);
+            else if (oldCat === 'tool') nextTools = nextTools.filter((_, i) => i !== oldIdx);
+            else if (oldCat === 'softSkill') nextSoftSkills = nextSoftSkills.filter((_, i) => i !== oldIdx);
+            // Add to new category
+            if (cat === 'skill') nextSkills.push(itemData);
+            else if (cat === 'tool') nextTools.push(itemData);
+            else if (cat === 'softSkill') nextSoftSkills.push(itemData);
           }
         } else {
-          if (cat === 'skill') nextSkills = [...skills, itemData];
-          else if (cat === 'tool') nextTools = [...tools, itemData];
-          else if (cat === 'softSkill') nextSoftSkills = [...softSkills, itemData];
+          // If skill with same name already exists in this category, update its level
+          if (cat === 'skill') {
+            const existingIdx = nextSkills.findIndex(s => s.name.trim().toLowerCase() === itemData.name.toLowerCase());
+            if (existingIdx >= 0) nextSkills[existingIdx] = itemData;
+            else nextSkills.push(itemData);
+          } else if (cat === 'tool') {
+            const existingIdx = nextTools.findIndex(t => t.name.trim().toLowerCase() === itemData.name.toLowerCase());
+            if (existingIdx >= 0) nextTools[existingIdx] = itemData;
+            else nextTools.push(itemData);
+          } else if (cat === 'softSkill') {
+            const existingIdx = nextSoftSkills.findIndex(s => s.name.trim().toLowerCase() === itemData.name.toLowerCase());
+            if (existingIdx >= 0) nextSoftSkills[existingIdx] = itemData;
+            else nextSoftSkills.push(itemData);
+          }
         }
 
         setSkills(nextSkills);
@@ -1693,12 +1713,13 @@ const ProfilePage = () => {
                           onDragStart={() => handleDragStart(i, 'skill')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'skill')}
+                          onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'skill', isEdit: true })}
                           className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
                               : 'bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xs border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200'
-                            } ${!isViewOnly ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            } ${!isViewOnly ? 'cursor-pointer active:scale-98' : ''}`}
                         >
                           {!isViewOnly && (
                             <span
@@ -1706,20 +1727,17 @@ const ProfilePage = () => {
                               style={{ touchAction: 'none' }}
                               className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span
-                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'skill' })}
-                          >
+                          <span className="font-medium break-words">
                             {skill.name}
                           </span>
                           <span
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'skill' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
-                            title="Mức độ thành thạo (Click để sửa)"
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${getLevelBadgeClass(skill.level)}`}
+                            title="Mức độ thành thạo (Bấm để sửa)"
                           >
                             {skill.level}
                           </span>
@@ -1730,7 +1748,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'skill');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa kỹ năng"
                             >
                               ×
@@ -1767,12 +1785,13 @@ const ProfilePage = () => {
                           onDragStart={() => handleDragStart(i, 'tool')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'tool')}
+                          onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'tool', isEdit: true })}
                           className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
                               : 'bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xs border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200'
-                            } ${!isViewOnly ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            } ${!isViewOnly ? 'cursor-pointer active:scale-98' : ''}`}
                         >
                           {!isViewOnly && (
                             <span
@@ -1780,20 +1799,17 @@ const ProfilePage = () => {
                               style={{ touchAction: 'none' }}
                               className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span
-                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'tool' })}
-                          >
+                          <span className="font-medium break-words">
                             {skill.name}
                           </span>
                           <span
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'tool' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
-                            title="Mức độ thành thạo (Click để sửa)"
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${getLevelBadgeClass(skill.level)}`}
+                            title="Mức độ thành thạo (Bấm để sửa)"
                           >
                             {skill.level}
                           </span>
@@ -1804,7 +1820,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'tool');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa công cụ"
                             >
                               ×
@@ -1841,12 +1857,13 @@ const ProfilePage = () => {
                           onDragStart={() => handleDragStart(i, 'softSkill')}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i, 'softSkill')}
+                          onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'softSkill', isEdit: true })}
                           className={`group inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all select-none max-w-full ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 scale-95 bg-blue-50/50 dark:bg-blue-950/40'
                             : isDropTarget
                               ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-900/60 scale-105 shadow-md z-10'
                               : 'bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xs border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200'
-                            } ${!isViewOnly ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            } ${!isViewOnly ? 'cursor-pointer active:scale-98' : ''}`}
                         >
                           {!isViewOnly && (
                             <span
@@ -1854,20 +1871,17 @@ const ProfilePage = () => {
                               style={{ touchAction: 'none' }}
                               className="py-1 px-2 -ml-1 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing touch-none inline-flex items-center justify-center shrink-0 select-none"
                               title="Chạm giữ và kéo để sắp xếp"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span
-                            className={`font-medium break-words ${!isViewOnly ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400' : ''}`}
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'softSkill' })}
-                          >
+                          <span className="font-medium break-words">
                             {skill.name}
                           </span>
                           <span
-                            onClick={() => !isViewOnly && openModal('skill', { ...skill, index: i, category: 'softSkill' })}
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${!isViewOnly ? 'cursor-pointer' : ''} ${getLevelBadgeClass(skill.level)}`}
-                            title="Mức độ thành thạo (Click để sửa)"
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${getLevelBadgeClass(skill.level)}`}
+                            title="Mức độ thành thạo (Bấm để sửa)"
                           >
                             {skill.level}
                           </span>
@@ -1878,7 +1892,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'softSkill');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa kỹ năng mềm"
                             >
                               ×
@@ -2880,10 +2894,10 @@ const ProfilePage = () => {
 
       {/* Editor Modal Overlays */}
       {modal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-999 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs animate-fade-in" onClick={closeModal}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-slate-800 animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-999 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs animate-fade-in" onClick={closeModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col border border-gray-100 dark:border-slate-800 animate-slide-up overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
-            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs z-10">
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0 bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-2xs">
                   {modal.type === 'personal' && <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
@@ -2898,14 +2912,14 @@ const ProfilePage = () => {
                     {modal.type === 'experience' && (modal.data ? 'Chỉnh sửa Kinh nghiệm' : 'Thêm Kinh nghiệm')}
                     {modal.type === 'education' && (modal.data ? 'Chỉnh sửa Học vấn' : 'Thêm Học vấn')}
                     {modal.type === 'certificate' && (modal.data ? 'Chỉnh sửa Chứng chỉ' : 'Thêm Chứng chỉ')}
-                    {modal.type === 'skill' && (modal.data?.isEdit ? 'Chỉnh sửa Kỹ năng' : 'Thêm Kỹ năng')}
+                    {modal.type === 'skill' && ((modal.data?.isEdit || formData.isEdit) ? 'Chỉnh sửa Kỹ năng' : 'Thêm Kỹ năng')}
                   </h2>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                     {modal.type === 'personal' && 'Cập nhật thông tin liên hệ và giới thiệu bản thân'}
                     {modal.type === 'experience' && 'Mô tả quá trình làm việc, dự án và thành tựu nổi bật'}
                     {modal.type === 'education' && 'Trình độ học vấn, cơ sở đào tạo và bằng cấp đạt được'}
                     {modal.type === 'certificate' && 'Chứng chỉ chuyên môn, giải thưởng hoặc ngoại ngữ'}
-                    {modal.type === 'skill' && 'Thêm kỹ năng chuyên môn, công cụ hoặc kỹ năng mềm'}
+                    {modal.type === 'skill' && ((modal.data?.isEdit || formData.isEdit) ? 'Cập nhật tên, danh mục hoặc mức độ thành thạo' : 'Thêm kỹ năng chuyên môn, công cụ hoặc kỹ năng mềm')}
                   </p>
                 </div>
               </div>
@@ -2914,7 +2928,8 @@ const ProfilePage = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 overscroll-contain custom-scrollbar">
 
               {modal.type === 'personal' && (
                 <div className="grid grid-cols-2 gap-4">
@@ -3364,8 +3379,10 @@ const ProfilePage = () => {
                   )}
                 </div>
               )}
+              </div>
 
-              <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center gap-3 justify-end">
+              {/* Sticky Footer */}
+              <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs flex items-center gap-2 sm:gap-3 justify-end pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 {modal.data && (
                   <button
                     type="button"
@@ -3376,24 +3393,25 @@ const ProfilePage = () => {
                         handleDelete(modal.data.id, modal.type);
                       }
                     }}
-                    className="mr-auto px-4 py-2.5 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="mr-auto min-h-[44px] sm:min-h-[40px] px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
                   >
-                    <Trash2 size={15} />
-                    <span>Xóa mục này</span>
+                    <Trash2 size={16} />
+                    <span className="hidden xs:inline sm:inline">Xóa mục này</span>
+                    <span className="xs:hidden sm:hidden">Xóa</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[40px] px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer touch-manipulation active:scale-95 select-none"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] rounded-xl shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[40px] px-5 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
                 >
-                  <Check size={16} />
+                  <Check size={18} />
                   <span>Lưu thay đổi</span>
                 </button>
               </div>
