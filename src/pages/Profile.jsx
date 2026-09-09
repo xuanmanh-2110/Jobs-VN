@@ -28,7 +28,7 @@ import {
 } from '../services/applicationService';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { db } from '../config/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { sendNotification } from '../services/notificationService';
 import PDFViewer from '../components/PDFViewer';
 import OnlineCVViewer from '../components/OnlineCVViewer';
@@ -100,6 +100,31 @@ const SKILL_SUGGESTIONS = {
   ]
 };
 
+const POPULAR_MAJORS = [
+  'Công nghệ thông tin',
+  'Kỹ thuật phần mềm',
+  'Khoa học máy tính',
+  'Hệ thống thông tin',
+  'An toàn thông tin',
+  'Trí tuệ nhân tạo (AI)',
+  'Khoa học dữ liệu',
+  'Quản trị kinh doanh',
+  'Marketing / Truyền thông',
+  'Thương mại điện tử',
+  'Kế toán / Kiểm toán',
+  'Tài chính - Ngân hàng',
+  'Kinh tế quốc tế',
+  'Logistics & Quản lý chuỗi cung ứng',
+  'Ngôn ngữ Anh',
+  'Ngôn ngữ Nhật',
+  'Ngôn ngữ Hàn',
+  'Thiết kế đồ họa / Multimedia',
+  'Kỹ thuật điện - điện tử',
+  'Kỹ thuật cơ điện tử',
+  'Quản trị nhân lực',
+  'Luật kinh tế'
+];
+
 const normalizeSkillList = (items, defaultLevel = 'Nâng cao') => {
   if (!Array.isArray(items)) return [];
   return items.map(item => {
@@ -121,8 +146,9 @@ const ProfilePage = () => {
     }
     const params = new URLSearchParams(location.search);
     const viewEmail = params.get('applicantEmail') || params.get('candidateEmail');
-    if (viewEmail) {
-      return { applicantEmail: viewEmail };
+    const viewUid = params.get('candidateUid') || params.get('uid');
+    if (viewEmail || viewUid) {
+      return { applicantEmail: viewEmail, candidateUid: viewUid };
     }
     return null;
   });
@@ -145,8 +171,9 @@ const ProfilePage = () => {
     }
     const params = new URLSearchParams(location.search);
     const viewEmail = params.get('applicantEmail') || params.get('candidateEmail');
-    if (viewEmail) {
-      setApplicantInfo({ applicantEmail: viewEmail });
+    const viewUid = params.get('candidateUid') || params.get('uid');
+    if (viewEmail || viewUid) {
+      setApplicantInfo({ applicantEmail: viewEmail, candidateUid: viewUid });
     } else if (!location.state?.applicant) {
       setApplicantInfo(null);
     }
@@ -427,9 +454,15 @@ const ProfilePage = () => {
   // Load and Subscribe data from Firebase
   useEffect(() => {
     if (isViewOnly) {
+      // 1. Gán ngay dữ liệu từ snapshot và avatar nộp ban đầu để hiển thị ngay lập tức
       const snap = applicantInfo?.profileSnapshot;
       if (snap) {
-        if (snap.personalInfo) setPersonalInfo(snap.personalInfo);
+        if (snap.personalInfo) {
+          setPersonalInfo({
+            ...snap.personalInfo,
+            avatar: snap.personalInfo.avatar || applicantInfo?.applicantAvatar || ''
+          });
+        }
         if (Array.isArray(snap.experiences)) setExperiences(snap.experiences);
         if (Array.isArray(snap.educations)) setEducations(snap.educations);
         if (Array.isArray(snap.certificates)) setCertificates(snap.certificates);
@@ -437,9 +470,71 @@ const ProfilePage = () => {
         if (Array.isArray(snap.tools)) setTools(normalizeSkillList(snap.tools));
         if (Array.isArray(snap.softSkills)) setSoftSkills(normalizeSkillList(snap.softSkills));
         if (snap.cv) setAttachedCV(snap.cv);
+      } else if (applicantInfo?.applicantAvatar) {
+        setPersonalInfo(prev => ({ ...prev, avatar: applicantInfo.applicantAvatar }));
       }
       setLoading(false);
-      return;
+
+      // 2. Lắng nghe hồ sơ trực tiếp (Live Candidate Profile) từ collection 'candidateProfiles'
+      const searchParams = new URLSearchParams(location.search);
+      let targetUid = applicantInfo?.candidateUid || applicantInfo?.uid || searchParams.get('candidateUid') || searchParams.get('uid') || '';
+      const targetEmail = (applicantInfo?.applicantEmail || applicantInfo?.email || searchParams.get('applicantEmail') || searchParams.get('candidateEmail') || '').toLowerCase().trim();
+
+      let unsubLive = () => {};
+
+      const applyLiveProfile = (data) => {
+        if (!data) return;
+        if (data.personalInfo) {
+          setPersonalInfo(prev => ({
+            ...prev,
+            ...data.personalInfo,
+            avatar: data.personalInfo.avatar || prev?.avatar || ''
+          }));
+        }
+        if (Array.isArray(data.experiences) && data.experiences.length > 0) setExperiences(data.experiences);
+        if (Array.isArray(data.educations) && data.educations.length > 0) setEducations(data.educations);
+        if (Array.isArray(data.certificates) && data.certificates.length > 0) setCertificates(data.certificates);
+        if (Array.isArray(data.skills) && data.skills.length > 0) setSkills(normalizeSkillList(data.skills));
+        if (Array.isArray(data.tools) && data.tools.length > 0) setTools(normalizeSkillList(data.tools));
+        if (Array.isArray(data.softSkills) && data.softSkills.length > 0) setSoftSkills(normalizeSkillList(data.softSkills));
+        if (typeof data.isSeekingJob === 'boolean') setIsSeekingJob(data.isSeekingJob);
+        if (data.cv) setAttachedCV(data.cv);
+      };
+
+      const startLiveProfileSync = async () => {
+        if (!targetUid && targetEmail) {
+          try {
+            const userQ = query(collection(db, 'users'), where('email', '==', targetEmail));
+            const userSnap = await getDocs(userQ);
+            if (!userSnap.empty) {
+              targetUid = userSnap.docs[0].id;
+            }
+          } catch (e) {
+            console.warn('Error resolving candidate uid:', e);
+          }
+        }
+
+        if (targetUid) {
+          unsubLive = subscribeCandidateProfile(targetUid, applyLiveProfile);
+        } else if (targetEmail) {
+          try {
+            const candQ = query(collection(db, 'candidateProfiles'), where('personalInfo.email', '==', targetEmail));
+            unsubLive = onSnapshot(candQ, (snap) => {
+              if (!snap.empty) {
+                applyLiveProfile(snap.docs[0].data());
+              }
+            }, (err) => console.warn('Error subscribing to candidate by email:', err));
+          } catch (e) {
+            console.warn('Error querying candidateProfiles by email:', e);
+          }
+        }
+      };
+
+      startLiveProfileSync();
+
+      return () => {
+        unsubLive();
+      };
     }
 
     if (userRole === 'hr') {
@@ -580,6 +675,34 @@ const ProfilePage = () => {
     }
   };
 
+  const syncCandidateAvatarToApplications = async (avatarUrl) => {
+    try {
+      const appsRef = collection(db, 'applications');
+      const updatePromises = [];
+      if (currentUser?.uid) {
+        const snapUid = await getDocs(query(appsRef, where('candidateUid', '==', currentUser.uid)));
+        snapUid.forEach(appDoc => {
+          updatePromises.push(updateDoc(doc(db, 'applications', appDoc.id), {
+            applicantAvatar: avatarUrl || '',
+            'profileSnapshot.personalInfo.avatar': avatarUrl || ''
+          }).catch(() => {}));
+        });
+      }
+      if (currentUser?.email) {
+        const snapEmail = await getDocs(query(appsRef, where('applicantEmail', '==', currentUser.email)));
+        snapEmail.forEach(appDoc => {
+          updatePromises.push(updateDoc(doc(db, 'applications', appDoc.id), {
+            applicantAvatar: avatarUrl || '',
+            'profileSnapshot.personalInfo.avatar': avatarUrl || ''
+          }).catch(() => {}));
+        });
+      }
+      await Promise.all(updatePromises);
+    } catch (syncErr) {
+      console.warn('Sync avatar to applications error:', syncErr);
+    }
+  };
+
   const handleSaveCroppedAvatar = async (croppedBase64) => {
     if (!currentUser) return;
     try {
@@ -590,6 +713,7 @@ const ProfilePage = () => {
       const updated = { ...personalInfo, avatar: downloadURL };
       setPersonalInfo(updated);
       await updateCandidateProfile(currentUser.uid, { personalInfo: updated });
+      await syncCandidateAvatarToApplications(downloadURL);
       setRawAvatarImage(null);
       showCvToast('Cập nhật ảnh đại diện thành công!');
     } catch (err) {
@@ -605,6 +729,7 @@ const ProfilePage = () => {
     setIsViewAvatarModalOpen(false);
     showCvToast('Đã xóa ảnh đại diện thành công!');
     await updateCandidateProfile(currentUser.uid, { personalInfo: updated });
+    await syncCandidateAvatarToApplications('');
   };
 
   const handleUploadAttachedCV = async (e) => {
@@ -948,8 +1073,64 @@ const ProfilePage = () => {
       const isCurrent = data ? (!initData.endMonth || data.time?.includes('Hiện tại')) : false;
       setFormData(data ? { ...initData, isCurrent } : { title: '', company: '', startMonth: '', endMonth: '', isCurrent: false, desc: '', logo: '', bg: 'bg-blue-600' });
     } else if (type === 'education') {
-      const isStudying = data ? (!initData.endMonth || data.time?.includes('Hiện tại') || data.time?.includes('Đang học')) : false;
-      setFormData(data ? { ...initData, isStudying } : { school: '', degree: '', startMonth: '', endMonth: '', isStudying: false, desc: '', icon: '' });
+      if (data) {
+        let degreeVal = data.degree || 'Cử nhân';
+        let majorVal = data.major || '';
+        let gpaVal = data.gpa || '';
+        let gpaScaleVal = data.gpaScale || '4.0';
+        let descVal = data.desc || '';
+
+        // Tự động phân tách Bằng cấp & Chuyên ngành nếu dữ liệu cũ bị gộp chung trong degree
+        if (!majorVal && degreeVal) {
+          const DEGREE_OPTIONS = ['Cử nhân', 'Kỹ sư', 'Thạc sĩ', 'Tiến sĩ', 'Chứng chỉ ngắn hạn'];
+          const matchedDegree = DEGREE_OPTIONS.find(d => degreeVal.toLowerCase().startsWith(d.toLowerCase()));
+          if (matchedDegree) {
+            degreeVal = matchedDegree;
+            majorVal = data.degree.slice(matchedDegree.length).trim().replace(/^[-–—:]\s*/, '');
+          } else {
+            majorVal = degreeVal;
+            degreeVal = 'Cử nhân';
+          }
+        }
+
+        // Tự động bóc tách GPA nếu dữ liệu cũ nằm trong desc (VD: "GPA:3.4/4.0")
+        if (!gpaVal && descVal) {
+          const gpaMatch = descVal.match(/(?:GPA|CPA)?\s*:?\s*(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/i);
+          if (gpaMatch) {
+            gpaVal = gpaMatch[1].replace(',', '.');
+            gpaScaleVal = gpaMatch[2].replace(',', '.');
+            descVal = descVal.replace(gpaMatch[0], '').trim().replace(/^[,;.\-\s]+|[,;.\-\s]+$/g, '');
+          }
+        }
+
+        const isStudying = !initData.endMonth || data.time?.includes('Hiện tại') || data.time?.includes('Đang học') || data.time?.includes('Dự kiến') || data.isStudying;
+
+        setFormData({
+          ...initData,
+          school: data.school || '',
+          degree: degreeVal || 'Cử nhân',
+          major: majorVal || '',
+          gpa: gpaVal || '',
+          gpaScale: gpaScaleVal || '4.0',
+          startMonth: data.startMonth || parseMonthInput(data.time?.split('-')[0]?.trim()) || '',
+          endMonth: data.endMonth || (data.time && !data.time.includes('Hiện tại') ? parseMonthInput(data.time.split('-')[1]?.trim().replace('Dự kiến', '')) : '') || '',
+          isStudying: !!isStudying,
+          desc: descVal || ''
+        });
+      } else {
+        setFormData({
+          school: '',
+          degree: 'Cử nhân',
+          major: '',
+          gpa: '',
+          gpaScale: '4.0',
+          startMonth: '',
+          endMonth: '',
+          isStudying: false,
+          desc: '',
+          icon: ''
+        });
+      }
     } else if (type === 'certificate') {
       let certInit = data ? { ...data } : { name: '', org: '', issueMonth: '', expiryMonth: '', noExpiry: false, desc: '', icon: '' };
       if (data) {
@@ -989,22 +1170,65 @@ const ProfilePage = () => {
         formattedTime += ` - ${em}/${ey}`;
       }
       finalData.time = formattedTime;
-    } else if (modal.type === 'education' && formData.startMonth) {
-      const [sy, sm] = formData.startMonth.split('-');
-      let formattedTime = `${sm}/${sy}`;
-      if (formData.isStudying || !formData.endMonth) {
-        formattedTime += ' - Hiện tại';
-      } else {
-        const [ey, em] = formData.endMonth.split('-');
-        formattedTime += ` - ${em}/${ey}`;
+    } else if (modal.type === 'education') {
+      let formattedTime = '';
+      if (formData.startMonth) {
+        const [sy, sm] = formData.startMonth.split('-');
+        const startDisplay = `${sm}/${sy}`;
+        if (formData.isStudying) {
+          if (formData.endMonth) {
+            const [ey, em] = formData.endMonth.split('-');
+            formattedTime = `${startDisplay} - Dự kiến ${em}/${ey}`;
+          } else {
+            formattedTime = `${startDisplay} - Hiện tại`;
+          }
+        } else if (formData.endMonth) {
+          const [ey, em] = formData.endMonth.split('-');
+          formattedTime = `${startDisplay} - ${em}/${ey}`;
+        } else {
+          formattedTime = `${startDisplay} - Hiện tại`;
+        }
       }
-      finalData.time = formattedTime;
+      finalData.time = formattedTime || formData.time || '';
+      finalData.degree = formData.degree || 'Cử nhân';
+      finalData.major = (formData.major || '').trim();
+      finalData.gpa = formData.gpa !== undefined && formData.gpa !== null ? String(formData.gpa).trim() : '';
+      finalData.gpaScale = formData.gpaScale || '4.0';
     }
 
     if (modal.type === 'personal') {
       setPersonalInfo(formData);
       if (!isViewOnly && currentUser) {
         updateCandidateProfile(currentUser.uid, { personalInfo: formData });
+        try {
+          const appsRef = collection(db, 'applications');
+          if (currentUser.uid) {
+            getDocs(query(appsRef, where('candidateUid', '==', currentUser.uid))).then(snap => {
+              snap.forEach(appDoc => {
+                updateDoc(doc(db, 'applications', appDoc.id), {
+                  applicantName: formData.name || '',
+                  applicantPhone: formData.phone || '',
+                  location: formData.loc || '',
+                  'profileSnapshot.personalInfo': formData
+                }).catch(() => {});
+              });
+            }).catch(() => {});
+          }
+          if (currentUser.email) {
+            getDocs(query(appsRef, where('applicantEmail', '==', currentUser.email))).then(snap => {
+              snap.forEach(appDoc => {
+                updateDoc(doc(db, 'applications', appDoc.id), {
+                  applicantName: formData.name || '',
+                  applicantPhone: formData.phone || '',
+                  location: formData.loc || '',
+                  'profileSnapshot.personalInfo': formData
+                }).catch(() => {});
+              });
+            }).catch(() => {});
+          }
+        } catch (syncErr) {
+          console.warn('Sync personal info to applications error:', syncErr);
+        }
       }
     } else if (modal.type === 'experience') {
       let updated;
@@ -1027,6 +1251,20 @@ const ProfilePage = () => {
       setEducations(updated);
       if (!isViewOnly && currentUser) {
         updateCandidateProfile(currentUser.uid, { educations: updated });
+        try {
+          const appsRef = collection(db, 'applications');
+          if (currentUser.uid) {
+            getDocs(query(appsRef, where('candidateUid', '==', currentUser.uid))).then(snap => {
+              snap.forEach(appDoc => {
+                updateDoc(doc(db, 'applications', appDoc.id), {
+                  'profileSnapshot.educations': updated
+                }).catch(() => {});
+              });
+            }).catch(() => {});
+          }
+        } catch (syncErr) {
+          console.warn('Sync educations to applications error:', syncErr);
+        }
       }
     } else if (modal.type === 'certificate') {
       let issueStr = formData.issueMonth ? formatMonthDisplay(formData.issueMonth) : (formData.issueDate || '');
@@ -1661,7 +1899,16 @@ const ProfilePage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">{ed.school}</h3>
-                          <p className="text-xs sm:text-sm text-gray-700 dark:text-slate-300 font-medium mb-1">{ed.degree}</p>
+                          <div className="flex flex-wrap items-center gap-2 mb-1 mt-0.5">
+                            <p className="text-xs sm:text-sm text-gray-700 dark:text-slate-300 font-medium">
+                              {ed.degree && ed.major ? `${ed.degree} • ${ed.major}` : (ed.degree || ed.major || '')}
+                            </p>
+                            {ed.gpa && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                GPA: {ed.gpa}/{ed.gpaScale || '4.0'}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 dark:text-slate-400">{ed.time}</p>
                         </div>
                         {!isViewOnly && (
@@ -3124,31 +3371,80 @@ const ProfilePage = () => {
 
               {modal.type === 'education' && (
                 <div className="grid grid-cols-1 gap-4">
+                  {/* Trường đào tạo / Cơ sở giáo dục */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                       Trường đào tạo / Cơ sở giáo dục <span className="text-red-500">*</span>
                     </label>
                     <UniversityAutocomplete
                       required
-                      placeholder="VD: Đại học Bách Khoa Hà Nội, ĐHQG Hà Nội..."
+                      placeholder="VD: Đại học Bách Khoa Hà Nội, ĐHQG Hà Nội, Đại học FPT..."
                       value={formData.school || ''}
                       onChange={val => setFormData({ ...formData, school: val })}
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                      Chuyên ngành / Bằng cấp <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="VD: Cử nhân Công nghệ thông tin, Kỹ sư phần mềm..."
-                      className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                      value={formData.degree || ''}
-                      onChange={e => setFormData({ ...formData, degree: e.target.value })}
-                    />
+
+                  {/* Cụm Bằng cấp & Chuyên ngành (Tách biệt) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-5">
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                        Bằng cấp (Degree) <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer font-medium"
+                        value={formData.degree || 'Cử nhân'}
+                        onChange={e => setFormData({ ...formData, degree: e.target.value })}
+                      >
+                        <option value="Cử nhân">Cử nhân</option>
+                        <option value="Kỹ sư">Kỹ sư</option>
+                        <option value="Thạc sĩ">Thạc sĩ</option>
+                        <option value="Tiến sĩ">Tiến sĩ</option>
+                        <option value="Chứng chỉ ngắn hạn">Chứng chỉ ngắn hạn</option>
+                        <option value="Khác">Khác</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-7">
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                        Chuyên ngành (Major) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          list="popular-majors-list"
+                          placeholder="VD: Công nghệ thông tin, Kỹ thuật phần mềm..."
+                          className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 font-medium"
+                          value={formData.major || ''}
+                          onChange={e => setFormData({ ...formData, major: e.target.value })}
+                        />
+                        <datalist id="popular-majors-list">
+                          {POPULAR_MAJORS.map((m, idx) => (
+                            <option key={idx} value={m} />
+                          ))}
+                        </datalist>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-4">
+
+                  {/* Gợi ý chuyên ngành phổ biến */}
+                  <div className="flex flex-wrap items-center gap-1.5 -mt-1">
+                    <span className="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Gợi ý nhanh:</span>
+                    {['Công nghệ thông tin', 'Kỹ thuật phần mềm', 'Khoa học máy tính', 'Quản trị kinh doanh', 'Marketing', 'Kế toán', 'Thiết kế đồ họa'].map((m, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, major: m })}
+                        className="px-2 py-0.5 bg-gray-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200/80 dark:border-slate-700 rounded-md text-[11px] text-gray-600 dark:text-slate-300 transition-colors cursor-pointer"
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Thời gian học */}
+                  <div className="flex flex-col sm:flex-row gap-3.5">
                     <div className="flex-1">
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
                         Từ tháng/năm <span className="text-red-500">*</span>
@@ -3162,33 +3458,74 @@ const ProfilePage = () => {
                     </div>
                     <div className="flex-1">
                       <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                        Đến tháng/năm {formData.isStudying && <span className="text-blue-600 dark:text-blue-400 font-semibold">(Đang theo học)</span>}
+                        {formData.isStudying ? (
+                          <span>Dự kiến tốt nghiệp <span className="text-blue-600 dark:text-blue-400 font-semibold">(Đang theo học)</span></span>
+                        ) : (
+                          <span>Đến tháng/năm</span>
+                        )}
                       </label>
                       <MonthPicker
-                        disabled={formData.isStudying}
                         value={formData.endMonth || ''}
                         onChange={val => setFormData({ ...formData, endMonth: val })}
-                        placeholder="Chọn tháng tốt nghiệp"
+                        placeholder={formData.isStudying ? "Chọn tháng dự kiến tốt nghiệp" : "Chọn tháng tốt nghiệp"}
                       />
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       id="isStudyingEdu"
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
                       checked={formData.isStudying || false}
-                      onChange={e => setFormData({ ...formData, isStudying: e.target.checked, endMonth: e.target.checked ? '' : formData.endMonth })}
+                      onChange={e => setFormData({ ...formData, isStudying: e.target.checked })}
                     />
                     <label htmlFor="isStudyingEdu" className="text-xs font-medium text-gray-700 dark:text-slate-300 cursor-pointer select-none">
                       Tôi đang theo học tại đây (Dự kiến tốt nghiệp)
                     </label>
                   </div>
+
+                  {/* Điểm số (GPA): Cụm input chuyên dụng [ Điểm đạt được ] / [ Thang điểm (Mặc định 4.0) ] */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">Thông tin bổ sung (Điểm CPA/GPA, Loại tốt nghiệp...)</label>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                      Điểm số (GPA / CPA) <span className="text-gray-400 font-normal">(Không bắt buộc)</span>
+                    </label>
+                    <div className="flex items-center gap-2 max-w-xs">
+                      <div className="flex-1 relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={formData.gpaScale === '10.0' ? 10 : formData.gpaScale === '100' ? 100 : 4}
+                          placeholder="VD: 3.4"
+                          className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                          value={formData.gpa ?? ''}
+                          onChange={e => setFormData({ ...formData, gpa: e.target.value })}
+                        />
+                      </div>
+                      <span className="text-base font-black text-gray-400 dark:text-slate-500 select-none">/</span>
+                      <div className="w-32 relative">
+                        <select
+                          className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold cursor-pointer"
+                          value={formData.gpaScale || '4.0'}
+                          onChange={e => setFormData({ ...formData, gpaScale: e.target.value })}
+                        >
+                          <option value="4.0">Thang 4.0</option>
+                          <option value="10.0">Thang 10.0</option>
+                          <option value="100">Thang 100</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thông tin bổ sung */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                      Thông tin bổ sung (Giải thưởng, đồ án tốt nghiệp, chứng chỉ...) <span className="text-gray-400 font-normal">(Không bắt buộc)</span>
+                    </label>
                     <textarea
-                      rows="2"
-                      placeholder="VD: Tốt nghiệp loại Giỏi (CPA: 3.2/4.0), Đạt giải Khuyến khích NCKH sinh viên..."
+                      rows="3"
+                      placeholder="VD: Tốt nghiệp loại Giỏi, Đạt giải Khuyến khích NCKH sinh viên cấp trường, Đồ án tốt nghiệp đạt điểm xuất sắc..."
                       className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl p-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all leading-relaxed placeholder:text-gray-400 dark:placeholder:text-slate-500"
                       value={formData.desc || ''}
                       onChange={e => setFormData({ ...formData, desc: e.target.value })}

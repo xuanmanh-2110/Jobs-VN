@@ -1869,7 +1869,16 @@ const JobDetail = () => {
                       {profileData.educations.map((edu, idx) => (
                         <div key={idx} className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700">
                           <p className="font-bold text-gray-900 dark:text-white">{edu.school}</p>
-                          <p className="text-gray-600 dark:text-slate-300">{edu.degree} ({edu.time})</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <p className="text-gray-600 dark:text-slate-300">
+                              {edu.degree && edu.major ? `${edu.degree} - ${edu.major}` : (edu.degree || edu.major || '')} {edu.time ? `(${edu.time})` : ''}
+                            </p>
+                            {edu.gpa && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                GPA: {edu.gpa}/{edu.gpaScale || '4.0'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

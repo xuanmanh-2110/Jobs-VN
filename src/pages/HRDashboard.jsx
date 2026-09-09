@@ -322,26 +322,38 @@ const HRDashboard = () => {
   // Real-time synchronization of all candidate user profiles
   const [candidateProfilesMap, setCandidateProfilesMap] = useState({});
 
+  const getTimestampMillis = (val) => {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    if (typeof val.toMillis === 'function') return val.toMillis();
+    if (val.seconds !== undefined) return val.seconds * 1000 + (val.nanoseconds ? Math.floor(val.nanoseconds / 1000000) : 0);
+    if (val instanceof Date) return val.getTime();
+    const parsed = Date.parse(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   React.useEffect(() => {
     try {
-      const unsub = onSnapshot(collection(db, 'userProfiles'), (snapshot) => {
+      const unsub = onSnapshot(collection(db, 'candidateProfiles'), (snapshot) => {
         const map = {};
         snapshot.forEach((docSnap) => {
           const d = docSnap.data();
           if (!d) return;
-          const docId = docSnap.id.toLowerCase().trim();
-          const docTimestamp = d.updatedAt || 0;
+          const rawDocId = docSnap.id.trim();
+          const docIdLower = rawDocId.toLowerCase();
+          const docTimestamp = getTimestampMillis(d.updatedAt);
 
           const updateIfNewer = (key) => {
             if (!key) return;
             const existing = map[key];
-            const existingTs = existing?.updatedAt || 0;
+            const existingTs = getTimestampMillis(existing?.updatedAt);
             if (!existing || docTimestamp >= existingTs) {
               map[key] = d;
             }
           };
 
-          updateIfNewer(docId);
+          updateIfNewer(rawDocId);
+          updateIfNewer(docIdLower);
           if (d.personalInfo?.email) {
             const rawEmail = d.personalInfo.email.toLowerCase().trim();
             updateIfNewer(rawEmail);
@@ -358,44 +370,30 @@ const HRDashboard = () => {
           }
         });
         setCandidateProfilesMap(map);
-      }, (err) => console.warn('userProfiles snapshot error:', err));
+      }, (err) => console.warn('candidateProfiles snapshot error:', err));
       return () => unsub();
     } catch (e) {
-      console.warn('Error listening to userProfiles:', e);
+      console.warn('Error listening to candidateProfiles:', e);
     }
   }, []);
 
   const getCandidateProfile = (cv) => {
     if (!cv) return null;
+    const uid = cv.candidateUid || cv.uid;
     const rawEmail = (cv.applicantEmail || cv.email || '').toLowerCase().trim();
-    if (!rawEmail) return cv.profileSnapshot || null;
 
+    const canonicalKey = rawEmail ? getCanonicalUserKey(rawEmail) : '';
+    const key1 = rawEmail ? rawEmail.replace(/[.#$\/\[\]]/g, '_') : '';
+    const key2 = rawEmail ? rawEmail.replace(/[@.#$\/\[\]]/g, '_') : '';
 
-
-    // 2. Check live Firestore profile map
-    const canonicalKey = getCanonicalUserKey(rawEmail);
-    const key1 = rawEmail.replace(/[.#$\/\[\]]/g, '_');
-    const key2 = rawEmail.replace(/[@.#$\/\[\]]/g, '_');
-
-    const possibleProfiles = [
-      candidateProfilesMap[canonicalKey],
-      candidateProfilesMap[rawEmail],
-      candidateProfilesMap[key1],
-      candidateProfilesMap[key2]
-    ].filter(Boolean);
-
-    // Find the newest live profile
-    possibleProfiles.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    const liveProfile = possibleProfiles[0] || null;
+    const liveProfile = (uid && (candidateProfilesMap[uid] || candidateProfilesMap[uid.toLowerCase()]))
+      || (canonicalKey && candidateProfilesMap[canonicalKey])
+      || (rawEmail && candidateProfilesMap[rawEmail])
+      || (key1 && candidateProfilesMap[key1])
+      || (key2 && candidateProfilesMap[key2])
+      || null;
 
     const snapProfile = cv.profileSnapshot;
-    const snapTs = snapProfile?.updatedAt || 0;
-    const liveTs = liveProfile?.updatedAt || 0;
-
-    // If we have a snapshot and it's newer (or same) than the live profile, use the snapshot directly
-    if (snapProfile && snapTs >= liveTs) {
-      return snapProfile;
-    }
 
     if (liveProfile) {
       const mergedPInfo = {
@@ -403,57 +401,72 @@ const HRDashboard = () => {
         ...(liveProfile.personalInfo || {})
       };
       if (!mergedPInfo.name || mergedPInfo.name === 'Người dùng mới') {
-        mergedPInfo.name = cv.applicantName || snapProfile?.personalInfo?.name || liveProfile.personalInfo?.name || 'Ứng viên';
+        mergedPInfo.name = cv.applicantName || liveProfile.personalInfo?.name || snapProfile?.personalInfo?.name || 'Ứng viên';
       }
-      if (!mergedPInfo.title) {
-        mergedPInfo.title = cv.title || snapProfile?.personalInfo?.title || liveProfile.personalInfo?.title || '';
+      if (!mergedPInfo.title || mergedPInfo.title === 'Chưa cập nhật chức danh') {
+        mergedPInfo.title = liveProfile.personalInfo?.title || snapProfile?.personalInfo?.title || cv.title || '';
       }
       if (!mergedPInfo.phone) {
-        mergedPInfo.phone = cv.applicantPhone || snapProfile?.personalInfo?.phone || liveProfile.personalInfo?.phone || '';
+        mergedPInfo.phone = liveProfile.personalInfo?.phone || cv.applicantPhone || snapProfile?.personalInfo?.phone || '';
       }
       if (!mergedPInfo.loc) {
-        mergedPInfo.loc = cv.location || snapProfile?.personalInfo?.loc || liveProfile.personalInfo?.loc || '';
+        mergedPInfo.loc = liveProfile.personalInfo?.loc || cv.location || snapProfile?.personalInfo?.loc || '';
       }
-      if (!mergedPInfo.avatar) {
-        mergedPInfo.avatar = cv.applicantAvatar || cv.avatar || snapProfile?.personalInfo?.avatar || liveProfile.personalInfo?.avatar || '';
+      if (liveProfile.personalInfo?.avatar) {
+        mergedPInfo.avatar = liveProfile.personalInfo.avatar;
+      } else if (!mergedPInfo.avatar) {
+        mergedPInfo.avatar = cv.applicantAvatar || cv.avatar || snapProfile?.personalInfo?.avatar || '';
       }
 
       return {
         personalInfo: mergedPInfo,
-        experiences: liveProfile.experiences !== undefined ? liveProfile.experiences : (snapProfile?.experiences || []),
-        educations: liveProfile.educations !== undefined ? liveProfile.educations : (snapProfile?.educations || []),
-        certificates: liveProfile.certificates !== undefined ? liveProfile.certificates : (snapProfile?.certificates || []),
-        skills: liveProfile.skills !== undefined ? liveProfile.skills : (snapProfile?.skills || []),
-        tools: liveProfile.tools !== undefined ? liveProfile.tools : (snapProfile?.tools || []),
-        softSkills: liveProfile.softSkills !== undefined ? liveProfile.softSkills : (snapProfile?.softSkills || []),
+        experiences: Array.isArray(liveProfile.experiences) && liveProfile.experiences.length > 0 ? liveProfile.experiences : (snapProfile?.experiences || []),
+        educations: Array.isArray(liveProfile.educations) && liveProfile.educations.length > 0 ? liveProfile.educations : (snapProfile?.educations || []),
+        certificates: Array.isArray(liveProfile.certificates) && liveProfile.certificates.length > 0 ? liveProfile.certificates : (snapProfile?.certificates || []),
+        skills: Array.isArray(liveProfile.skills) && liveProfile.skills.length > 0 ? liveProfile.skills : (snapProfile?.skills || []),
+        tools: Array.isArray(liveProfile.tools) && liveProfile.tools.length > 0 ? liveProfile.tools : (snapProfile?.tools || []),
+        softSkills: Array.isArray(liveProfile.softSkills) && liveProfile.softSkills.length > 0 ? liveProfile.softSkills : (snapProfile?.softSkills || []),
         isSeekingJob: liveProfile.isSeekingJob !== undefined ? liveProfile.isSeekingJob : (snapProfile?.isSeekingJob ?? true),
-        updatedAt: liveTs || snapTs || 0
+        cv: liveProfile.cv || snapProfile?.cv || null,
+        updatedAt: getTimestampMillis(liveProfile.updatedAt) || getTimestampMillis(snapProfile?.updatedAt) || 0
       };
     }
 
     return snapProfile || null;
-
-    return cv.profileSnapshot || null;
   };
 
   const getCandidateAvatar = (cv) => {
     if (!cv) return null;
+    const uid = cv.candidateUid || cv.uid;
     const rawEmail = (cv.applicantEmail || cv.email || '').toLowerCase().trim();
+
+    // 1. Check live candidate profile by UID
+    if (uid) {
+      const live = candidateProfilesMap[uid] || candidateProfilesMap[uid.toLowerCase()];
+      if (live?.personalInfo?.avatar) return live.personalInfo.avatar;
+      if (live?.avatar) return live.avatar;
+    }
+
+    // 2. Check live candidate profile by Email
     if (rawEmail) {
       const canonicalKey = getCanonicalUserKey(rawEmail);
       const key1 = rawEmail.replace(/[.#$\/\[\]]/g, '_');
       const key2 = rawEmail.replace(/[@.#$\/\[\]]/g, '_');
-      const live = candidateProfilesMap[canonicalKey] || candidateProfilesMap[key1] || candidateProfilesMap[key2] || candidateProfilesMap[rawEmail];
+      const live = candidateProfilesMap[canonicalKey] || candidateProfilesMap[rawEmail] || candidateProfilesMap[key1] || candidateProfilesMap[key2];
       if (live?.personalInfo?.avatar) return live.personalInfo.avatar;
       if (live?.avatar) return live.avatar;
     }
+
+    // 3. Check merged profile
     const profile = getCandidateProfile(cv);
     if (profile?.personalInfo?.avatar) return profile.personalInfo.avatar;
     if (profile?.avatar) return profile.avatar;
-    if (cv.profileSnapshot?.personalInfo?.avatar) return cv.profileSnapshot.personalInfo.avatar;
-    if (cv.profileSnapshot?.avatar) return cv.profileSnapshot.avatar;
+
+    // 4. Fallbacks to application snapshots
     if (cv.applicantAvatar) return cv.applicantAvatar;
     if (cv.avatar) return cv.avatar;
+    if (cv.profileSnapshot?.personalInfo?.avatar) return cv.profileSnapshot.personalInfo.avatar;
+    if (cv.profileSnapshot?.avatar) return cv.profileSnapshot.avatar;
     return null;
   };
 
@@ -462,13 +475,18 @@ const HRDashboard = () => {
     handleMarkAsViewed(cv);
     const candidateProfile = getCandidateProfile(cv);
     const candidateAvatar = getCandidateAvatar(cv);
+    const candidateUid = cv.candidateUid || cv.uid || '';
     const fullApplicantData = {
       ...cv,
+      candidateUid,
       applicantAvatar: candidateAvatar || cv.applicantAvatar || cv.avatar || null,
       profileSnapshot: candidateProfile || cv.profileSnapshot || null
     };
     const emailParam = cv.applicantEmail || cv.email || '';
-    navigate(`/profile?applicantEmail=${encodeURIComponent(emailParam)}`, { state: { applicant: fullApplicantData } });
+    const queryParams = new URLSearchParams();
+    if (emailParam) queryParams.set('applicantEmail', emailParam);
+    if (candidateUid) queryParams.set('candidateUid', candidateUid);
+    navigate(`/profile?${queryParams.toString()}`, { state: { applicant: fullApplicantData } });
   };
 
   // Chỉ hiển thị tin do HR này tự đăng
