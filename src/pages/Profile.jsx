@@ -1147,7 +1147,7 @@ const ProfilePage = () => {
               <span>/</span>
               <span className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 font-medium" onClick={() => navigate('/hr-dashboard')}>Quản lý HR</span>
               <span>/</span>
-              <span className="text-gray-900 dark:text-white font-medium truncate max-w-[180px] sm:max-w-none">Hồ sơ ứng viên: {personalInfo.name}</span>
+              <span className="text-gray-900 dark:text-white font-medium truncate max-w-45 sm:max-w-none">Hồ sơ ứng viên: {personalInfo.name}</span>
             </>
           ) : (
             <>
@@ -1220,7 +1220,7 @@ const ProfilePage = () => {
             </p>
 
             {/* Job Seeking Toggle Switch */}
-            <div className="w-full mt-1 p-3 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl flex items-center justify-between">
+            <div className="w-full mt-1 p-3 bg-linear-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl flex items-center justify-between">
               <div className="text-left pr-2 min-w-0">
                 <p className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${isSeekingJob ? 'bg-green-500 animate-pulse' : 'bg-gray-400 dark:bg-slate-600'}`} />
@@ -1449,7 +1449,7 @@ const ProfilePage = () => {
               <button
                 type="button"
                 onClick={handleScrollTabsLeft}
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 dark:bg-slate-800/95 hover:bg-white dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer hidden sm:flex active:scale-95"
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 dark:bg-slate-800/95 hover:bg-white dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-md border border-gray-200 dark:border-slate-700 hidden sm:flex items-center justify-center transition-all cursor-pointer active:scale-95"
                 title="Cuộn sang trái"
                 aria-label="Cuộn sang trái"
               >
@@ -1494,7 +1494,7 @@ const ProfilePage = () => {
               <button
                 type="button"
                 onClick={handleScrollTabsRight}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 dark:bg-slate-800/95 hover:bg-white dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer hidden sm:flex active:scale-95"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 dark:bg-slate-800/95 hover:bg-white dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-md border border-gray-200 dark:border-slate-700 hidden sm:flex items-center justify-center transition-all cursor-pointer active:scale-95"
                 title="Cuộn sang phải"
                 aria-label="Cuộn sang phải"
               >
@@ -1601,7 +1601,7 @@ const ProfilePage = () => {
                           <button
                             type="button"
                             onClick={() => openModal('experience', ex)}
-                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-9 min-h-9 flex items-center justify-center"
                             title="Chỉnh sửa kinh nghiệm"
                           >
                             <Edit3 size={16} />
@@ -1634,7 +1634,7 @@ const ProfilePage = () => {
                           <button
                             type="button"
                             onClick={() => openModal('education', ed)}
-                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-9 min-h-9 flex items-center justify-center"
                             title="Chỉnh sửa học vấn"
                           >
                             <Edit3 size={16} />
@@ -1666,7 +1666,7 @@ const ProfilePage = () => {
                           <button
                             type="button"
                             onClick={() => openModal('certificate', cert)}
-                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-all cursor-pointer opacity-100 z-10 relative shrink-0 min-w-9 min-h-9 flex items-center justify-center"
                             title="Chỉnh sửa chứng chỉ"
                           >
                             <Edit3 size={16} />
@@ -1698,7 +1698,7 @@ const ProfilePage = () => {
                       <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">({skills.length})</span>
                     </h3>
                   </div>
-                  <div className="flex flex-wrap gap-2.5 min-h-[42px] p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
+                  <div className="flex flex-wrap gap-2.5 min-h-10.5 p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
                     {skills.map((skill, i) => {
                       const isBeingDragged = (dragItem?.category === 'skill' && dragItem?.index === i) || (touchDrag?.category === 'skill' && touchDrag?.index === i);
                       const isDropTarget = touchDrag?.category === 'skill' && touchDrag?.targetIndex === i && touchDrag?.index !== i;
@@ -1732,7 +1732,7 @@ const ProfilePage = () => {
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span className="font-medium break-words">
+                          <span className="font-medium wrap-break-word">
                             {skill.name}
                           </span>
                           <span
@@ -1748,7 +1748,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'skill');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-6 min-h-6 flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa kỹ năng"
                             >
                               ×
@@ -1770,7 +1770,7 @@ const ProfilePage = () => {
                       <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">({tools.length})</span>
                     </h3>
                   </div>
-                  <div className="flex flex-wrap gap-2.5 min-h-[42px] p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
+                  <div className="flex flex-wrap gap-2.5 min-h-10.5 p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
                     {tools.map((skill, i) => {
                       const isBeingDragged = (dragItem?.category === 'tool' && dragItem?.index === i) || (touchDrag?.category === 'tool' && touchDrag?.index === i);
                       const isDropTarget = touchDrag?.category === 'tool' && touchDrag?.targetIndex === i && touchDrag?.index !== i;
@@ -1804,7 +1804,7 @@ const ProfilePage = () => {
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span className="font-medium break-words">
+                          <span className="font-medium wrap-break-word">
                             {skill.name}
                           </span>
                           <span
@@ -1820,7 +1820,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'tool');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-6 min-h-6 flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa công cụ"
                             >
                               ×
@@ -1842,7 +1842,7 @@ const ProfilePage = () => {
                       <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">({softSkills.length})</span>
                     </h3>
                   </div>
-                  <div className="flex flex-wrap gap-2.5 min-h-[42px] p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
+                  <div className="flex flex-wrap gap-2.5 min-h-10.5 p-2 rounded-xl bg-gray-50/50 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-700">
                     {softSkills.map((skill, i) => {
                       const isBeingDragged = (dragItem?.category === 'softSkill' && dragItem?.index === i) || (touchDrag?.category === 'softSkill' && touchDrag?.index === i);
                       const isDropTarget = touchDrag?.category === 'softSkill' && touchDrag?.targetIndex === i && touchDrag?.index !== i;
@@ -1876,7 +1876,7 @@ const ProfilePage = () => {
                               <GripVertical size={15} />
                             </span>
                           )}
-                          <span className="font-medium break-words">
+                          <span className="font-medium wrap-break-word">
                             {skill.name}
                           </span>
                           <span
@@ -1892,7 +1892,7 @@ const ProfilePage = () => {
                                 e.stopPropagation();
                                 handleDelete(i, 'softSkill');
                               }}
-                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
+                              className="text-gray-400 hover:text-red-500 ml-0.5 p-1 text-base leading-none transition-colors cursor-pointer shrink-0 touch-manipulation min-w-6 min-h-6 flex items-center justify-center rounded-md hover:bg-red-50 dark:hover:bg-red-950/40"
                               title="Xóa kỹ năng mềm"
                             >
                               ×
@@ -1919,7 +1919,7 @@ const ProfilePage = () => {
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-2xl ring-4 ring-blue-500/30 scale-105 select-none pointer-events-none transition-transform"
                   >
                     <GripVertical size={16} className="opacity-80" />
-                    <span className="truncate max-w-[160px]">{touchDrag.name}</span>
+                    <span className="truncate max-w-40">{touchDrag.name}</span>
                     {touchDrag.level && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/25 font-bold shrink-0 whitespace-nowrap">
                         {touchDrag.level}
@@ -2175,7 +2175,7 @@ const ProfilePage = () => {
                           <div className="p-3 sm:p-3.5 bg-gray-50/80 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800 rounded-xl">
                             <div className="relative">
                               {/* Connector line: runs exactly from center of Step 1 (16.67%) to center of Step 3 (83.33%) */}
-                              <div className="absolute top-[13px] left-[16.67%] right-[16.67%] h-0.5 bg-gray-200 dark:bg-slate-700 z-0">
+                              <div className="absolute top-3.25 left-[16.67%] right-[16.67%] h-0.5 bg-gray-200 dark:bg-slate-700 z-0">
                                 <div
                                   className="h-full bg-blue-600 transition-all duration-500"
                                   style={{
@@ -2391,7 +2391,7 @@ const ProfilePage = () => {
                 <h5 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Tiến trình xét duyệt hồ sơ</h5>
                 <div className="relative">
                   {/* Connector line: runs exactly from center of Step 1 (16.67%) to center of Step 3 (83.33%) */}
-                  <div className="absolute top-[13px] left-[16.67%] right-[16.67%] h-0.5 bg-gray-200 dark:bg-slate-700 z-0">
+                  <div className="absolute top-3.25 left-[16.67%] right-[16.67%] h-0.5 bg-gray-200 dark:bg-slate-700 z-0">
                     <div
                       className="h-full bg-blue-600 transition-all duration-500"
                       style={{
@@ -2770,14 +2770,14 @@ const ProfilePage = () => {
         return (
           <div className="fixed inset-0 z-999 flex items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs animate-fade-in" onClick={() => setPreviewCVData(null)}>
             <div
-              className="bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col animate-slide-up w-full h-[100dvh] sm:h-[90dvh] sm:max-w-4xl sm:rounded-3xl rounded-none border border-gray-200 dark:border-slate-800"
+              className="bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col animate-slide-up w-full h-dvh sm:h-[90dvh] sm:max-w-4xl sm:rounded-3xl rounded-none border border-gray-200 dark:border-slate-800"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
               <div className="px-3.5 py-2.5 sm:px-5 sm:py-3.5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
                 <div className="flex items-center gap-2 min-w-0 pr-2">
                   <FileText size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
-                  <h4 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm truncate max-w-[170px] xs:max-w-[240px] sm:max-w-md" title={previewCVData.cvName}>
+                  <h4 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm truncate max-w-42.5 xs:max-w-60 sm:max-w-md" title={previewCVData.cvName}>
                     {previewCVData.cvName || 'CV_UngVien.pdf'}
                   </h4>
                 </div>
@@ -3393,7 +3393,7 @@ const ProfilePage = () => {
                         handleDelete(modal.data.id, modal.type);
                       }
                     }}
-                    className="mr-auto min-h-[44px] sm:min-h-[40px] px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
+                    className="mr-auto min-h-11 sm:min-h-10 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
                   >
                     <Trash2 size={16} />
                     <span className="hidden xs:inline sm:inline">Xóa mục này</span>
@@ -3403,13 +3403,13 @@ const ProfilePage = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="min-h-[44px] sm:min-h-[40px] px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer touch-manipulation active:scale-95 select-none"
+                  className="min-h-11 sm:min-h-10 px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer touch-manipulation active:scale-95 select-none"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="min-h-[44px] sm:min-h-[40px] px-5 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
+                  className="min-h-11 sm:min-h-10 px-5 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 select-none"
                 >
                   <Check size={18} />
                   <span>Lưu thay đổi</span>
@@ -3421,7 +3421,7 @@ const ProfilePage = () => {
       )}
       {/* MODAL: Xem & Quản lý Ảnh đại diện */}
       {isViewAvatarModalOpen && personalInfo.avatar && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fade-in" onClick={() => setIsViewAvatarModalOpen(false)}>
+        <div className="fixed inset-0 z-999 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fade-in" onClick={() => setIsViewAvatarModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up border border-gray-100 dark:border-slate-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
@@ -3505,7 +3505,7 @@ const ProfilePage = () => {
                   <button
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
-                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     Đổi ảnh
